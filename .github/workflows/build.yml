@@ -38,7 +38,6 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
-            type=raw,value=grpc
             type=sha,prefix=,suffix=,format=short
 
       - name: Build and push
