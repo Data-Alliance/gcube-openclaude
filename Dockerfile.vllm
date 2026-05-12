@@ -1,0 +1,86 @@
+# ============================================================
+# vLLM 공식 이미지를 베이스로 사용
+# - vLLM, PyTorch, CUDA 호환성 검증된 환경
+# - 위에 OpenClaude 및 관련 도구 추가
+# - build.yml의 pull: true 로 베이스 이미지 매 빌드마다 최신 pull
+# ============================================================
+FROM vllm/vllm-openai:latest
+
+# ============================================================
+# 환경변수
+# ============================================================
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Asia/Seoul
+ENV LANG=ko_KR.UTF-8
+ENV LANGUAGE=ko_KR:ko
+ENV LC_ALL=ko_KR.UTF-8
+
+# ============================================================
+# 시스템 패키지 추가
+# ============================================================
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl wget git nano vim ca-certificates \
+        jq zstd unzip ripgrep locales \
+    && locale-gen ko_KR.UTF-8 \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================
+# Node.js 22
+# ============================================================
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs
+
+# ============================================================
+# Ollama
+# ============================================================
+RUN curl -fsSL https://ollama.com/install.sh | sh
+
+# ============================================================
+# 캐시 무효화 인자 (build.yml에서 매 빌드마다 다른 값 전달)
+# 아래 OpenClaude 관련 RUN은 이 ARG 이후부터 캐시 무효화됨
+# ============================================================
+ARG CACHEBUST=1
+
+# ============================================================
+# OpenClaude (npm 글로벌 설치) - 콘솔 모드용
+# CACHEBUST로 매 빌드마다 최신 버전 설치
+# ============================================================
+RUN echo "Cache bust: ${CACHEBUST}" \
+    && npm install -g @gitlawb/openclaude
+
+# ============================================================
+# Bun + OpenClaude Source (for gRPC server mode)
+# CACHEBUST로 매 빌드마다 최신 소스 클론
+# ============================================================
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:${PATH}"
+
+RUN echo "Cache bust: ${CACHEBUST}" \
+    && git clone https://github.com/Gitlawb/openclaude.git /opt/openclaude \
+    && cd /opt/openclaude \
+    && /root/.bun/bin/bun install
+
+# gRPC defaults (overridable via workload env)
+ENV GRPC_PORT=50051
+ENV GRPC_HOST=0.0.0.0
+
+EXPOSE 50051
+
+# ============================================================
+# Hugging Face 모델 캐시 기본 경로
+# ============================================================
+ENV HF_HOME=/workspace/huggingface_cache
+
+# ============================================================
+# Workspace
+# ============================================================
+RUN mkdir -p /workspace
+WORKDIR /workspace
+
+# ============================================================
+# Entrypoint (vLLM 기본 entrypoint를 OpenClaude entrypoint로 대체)
+# ============================================================
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
