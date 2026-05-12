@@ -4,7 +4,7 @@
 # - 위에 OpenClaude 및 관련 도구 추가
 # - build.yml의 pull: true 로 베이스 이미지 매 빌드마다 최신 pull
 # ============================================================
-FROM vllm/vllm-openai:latest
+FROM vllm/vllm-openai:cu129-nightly
 
 # ============================================================
 # 환경변수
