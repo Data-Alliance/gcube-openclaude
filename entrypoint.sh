@@ -50,6 +50,23 @@ if command -v ollama > /dev/null 2>&1; then
         sleep 1
     done
     echo "[INFO] Ollama ready."
+
+    # OLLAMA_MODELS 환경변수가 있으면 자동 pull (공백 구분, 다수 모델 가능)
+    # 예: OLLAMA_MODELS="glm-4.7-flash:q4_K_M qwen3:14b"
+    if [ -n "$OLLAMA_MODELS" ]; then
+        echo ""
+        echo "================================================"
+        echo "  Ollama Auto Pull"
+        echo "================================================"
+        echo "  Models: $OLLAMA_MODELS"
+        echo "================================================"
+        
+        for MODEL in $OLLAMA_MODELS; do
+            echo "[INFO] Pulling: $MODEL"
+            ollama pull "$MODEL" || echo "[WARN] Failed to pull: $MODEL"
+        done
+        echo "[INFO] Ollama models ready."
+    fi
 else
     echo ""
     echo "[INFO] Ollama not installed (vllm image), skipping Ollama startup."
