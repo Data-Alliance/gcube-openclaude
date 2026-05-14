@@ -48,6 +48,11 @@ RUN curl -fsSL https://ollama.com/download/ollama-linux-amd64.tar.zst \
 RUN npm install -g @gitlawb/openclaude
 
 # ============================================================
+# gcube CLI (워크로드 관리·모니터링)
+# ============================================================
+RUN pip3 install gcube-cli
+
+# ============================================================
 # Workspace
 # ============================================================
 RUN mkdir -p /root/.claude /workspace

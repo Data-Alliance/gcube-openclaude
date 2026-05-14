@@ -12,9 +12,9 @@ env:
 
 jobs:
   # ============================================================
-  # 기존 이미지 (basic) - gcube-openclaude
+  # 기본 이미지 (default) - gcube-openclaude
   # ============================================================
-  build-basic:
+  build-default:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -34,8 +34,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (basic)
-        id: meta-basic
+      - name: Extract metadata (default)
+        id: meta-default
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/gcube-openclaude
@@ -43,22 +43,22 @@ jobs:
             type=raw,value=latest
             type=sha,prefix=,suffix=,format=short
 
-      - name: Build and push (basic)
+      - name: Build and push (default)
         uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
           push: true
           pull: true
-          tags: ${{ steps.meta-basic.outputs.tags }}
-          labels: ${{ steps.meta-basic.outputs.labels }}
-          cache-from: type=gha,scope=basic
-          cache-to: type=gha,mode=max,scope=basic
+          tags: ${{ steps.meta-default.outputs.tags }}
+          labels: ${{ steps.meta-default.outputs.labels }}
+          cache-from: type=gha,scope=default
+          cache-to: type=gha,mode=max,scope=default
           build-args: |
             CACHEBUST=${{ github.run_number }}-${{ github.run_attempt }}
 
   # ============================================================
-  # 신규 이미지 (vllm) - gcube-openclaude-vllm
+  # vllm 이미지 - gcube-openclaude-vllm
   # ============================================================
   build-vllm:
     runs-on: ubuntu-latest

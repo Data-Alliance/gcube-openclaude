@@ -46,8 +46,25 @@ else
 fi
 
 # ============================================================
+# gcube CLI 자동 설정 (GCUBE_ACCESS_TOKEN 제공 시)
+# - 환경변수 GCUBE_ACCESS_TOKEN가 있으면 gcube CLI 토큰 자동 등록
+# - 미제공 시 사용자가 컨테이너 진입 후 직접 `gcube configure set --token <token>` 실행
+# ============================================================
+if [ -n "$GCUBE_ACCESS_TOKEN" ]; then
+    echo ""
+    echo "[INFO] gcube CLI 토큰 설정 중..."
+    if gcube configure set --token "$GCUBE_ACCESS_TOKEN" > /dev/null 2>&1; then
+        echo "✅ gcube configure 완료"
+    else
+        echo "[WARN] gcube configure 실패"
+    fi
+else
+    echo "[INFO] GCUBE_ACCESS_TOKEN이 제공되지 않아 gcube CLI 자동 설정을 건너뜁니다."
+fi
+
+# ============================================================
 # Ollama 백그라운드 시작 (Ollama가 설치된 이미지에서만)
-# - basic 이미지: Ollama 설치되어 있음 → 시작
+# - default 이미지: Ollama 설치되어 있음 → 시작
 # - vllm 이미지: Ollama 없음 → 건너뜀
 # ============================================================
 if command -v ollama > /dev/null 2>&1; then
@@ -95,6 +112,7 @@ cat << EOF
   Provider:  ${OPENAI_BASE_URL:-${ANTHROPIC_BASE_URL:-anthropic native}}
   Model:     ${OPENAI_MODEL:-${ANTHROPIC_MODEL:-default}}
   Git user:  ${GIT_USER_NAME:-not configured}
+  gcube CLI: ${GCUBE_ACCESS_TOKEN:+configured}${GCUBE_ACCESS_TOKEN:-not configured}
 
   To start, run:
     \$ openclaude
@@ -109,8 +127,9 @@ cat << EOF
   Useful CLI commands:
     \$ openclaude --print "your task here"   # one-shot mode
     \$ openclaude --version                  # check version
-    \$ ollama list                           # list pulled local models (basic image only)
-    \$ ollama pull <model>                   # pull a local model (basic image only)
+    \$ gcube workload list                   # list gcube workloads (if configured)
+    \$ ollama list                           # list pulled local models (default image only)
+    \$ ollama pull <model>                   # pull a local model (default image only)
 
 ==================================================================
 
@@ -122,7 +141,7 @@ echo "================================================"
 
 # ============================================================
 # gRPC 서버 모드 분기 (GRPC_MODE=1 시 자동 기동)
-# - basic 이미지에서만 동작 (vllm 이미지에는 bun + 소스 없음)
+# - default 이미지에서만 동작 (vllm 이미지에는 bun + 소스 없음)
 # ============================================================
 if [ "$GRPC_MODE" = "1" ]; then
     if [ -d "/opt/openclaude" ] && command -v bun > /dev/null 2>&1; then
@@ -140,7 +159,7 @@ if [ "$GRPC_MODE" = "1" ]; then
     else
         echo ""
         echo "[WARN] GRPC_MODE=1 이지만 gRPC 실행 환경이 없습니다 (vllm 이미지)."
-        echo "[WARN] gRPC 모드는 basic 이미지(gcube-openclaude)를 사용해주세요."
+        echo "[WARN] gRPC 모드는 default 이미지(gcube-openclaude)를 사용해주세요."
     fi
 fi
 

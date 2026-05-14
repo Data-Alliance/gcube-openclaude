@@ -1,10 +1,12 @@
 # ============================================================
-# vLLM 공식 이미지를 베이스로 사용 (CUDA 12.9 호환)
+# vLLM 공식 stable 이미지 사용 (v0.20.2-cu129, CUDA 12.9 호환)
+# - nightly에서 stable로 변경: nixl_ep 라이브러리 변동성 회피
+# - gcube CUDA 12.9까지 지원 환경 호환
 # - vLLM Hugging Face 모델 운영 전용
 # - OpenClaude (npm 콘솔 모드만) 포함
-# - Ollama, gRPC(bun+소스)는 basic 이미지에서 사용
+# - Ollama, gRPC(bun+소스)는 default 이미지에서 사용
 # ============================================================
-FROM vllm/vllm-openai:cu129-nightly
+FROM vllm/vllm-openai:v0.20.2-cu129
 
 # ============================================================
 # 환경변수
@@ -33,6 +35,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
+
+# ============================================================
+# gcube CLI (vLLM Python 환경과 격리하여 의존성 충돌 방지)
+# - venv 격리 환경에 설치
+# - /usr/local/bin에 symlink로 PATH 노출 → 사용자는 그냥 `gcube` 명령 사용
+# ============================================================
+RUN python3 -m venv /opt/gcube-venv \
+    && /opt/gcube-venv/bin/pip install --no-cache-dir gcube-cli \
+    && ln -s /opt/gcube-venv/bin/gcube /usr/local/bin/gcube
 
 # ============================================================
 # 캐시 무효화 인자 (build.yml에서 매 빌드마다 다른 값 전달)
