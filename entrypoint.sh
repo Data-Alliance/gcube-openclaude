@@ -63,6 +63,32 @@ else
 fi
 
 # ============================================================
+# Hugging Face Hub 자동 인증 (HF_TOKEN 제공 시)
+# - 환경변수 + 토큰 파일 둘 다 설정으로 견고성 확보
+# - vllm 이미지에서만 동작 (huggingface_hub CLI 존재 시)
+# - default 이미지에서는 huggingface_hub CLI 미설치로 건너뜀 (환경변수만 유지)
+# ============================================================
+if [ -n "$HF_TOKEN" ]; then
+    echo ""
+    echo "[INFO] Hugging Face Hub 토큰 설정 중..."
+    if command -v hf > /dev/null 2>&1; then
+        if hf auth login --token "$HF_TOKEN" --add-to-git-credential > /dev/null 2>&1; then
+            echo "✅ Hugging Face 토큰 등록 완료"
+        else
+            echo "[WARN] Hugging Face 토큰 등록 실패"
+        fi
+    elif command -v huggingface-cli > /dev/null 2>&1; then
+        if huggingface-cli login --token "$HF_TOKEN" --add-to-git-credential > /dev/null 2>&1; then
+            echo "✅ Hugging Face 토큰 등록 완료"
+        else
+            echo "[WARN] Hugging Face 토큰 등록 실패"
+        fi
+    else
+        echo "[INFO] Hugging Face CLI 미설치 — 환경변수 HF_TOKEN만 유지 (라이브러리 자동 인식)"
+    fi
+fi
+
+# ============================================================
 # Ollama 백그라운드 시작 (Ollama가 설치된 이미지에서만)
 # - default 이미지: Ollama 설치되어 있음 → 시작
 # - vllm 이미지: Ollama 없음 → 건너뜀
@@ -113,6 +139,7 @@ cat << EOF
   Model:     ${OPENAI_MODEL:-${ANTHROPIC_MODEL:-default}}
   Git user:  ${GIT_USER_NAME:-not configured}
   gcube CLI: ${GCUBE_ACCESS_TOKEN:+configured}${GCUBE_ACCESS_TOKEN:-not configured}
+  HF Token:  ${HF_TOKEN:+configured}${HF_TOKEN:-not configured}
 
   To start, run:
     \$ openclaude

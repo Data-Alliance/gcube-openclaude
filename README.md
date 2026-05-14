@@ -9,6 +9,9 @@ OpenClaude 실행용 컨테이너 이미지. 사용 목적에 따라 두 가지 
 | `ghcr.io/data-alliance/gcube-openclaude:latest` | `nvidia/cuda:12.8.1-runtime-ubuntu22.04` | 클라우드 모델 + Ollama 로컬 모델 + gRPC |
 | `ghcr.io/data-alliance/gcube-openclaude-vllm:latest` | `vllm/vllm-openai:v0.20.2-cu129` | Hugging Face 모델 (vLLM) 전용 |
 
+- vllm 이미지는 베이스 이미지(vLLM + CUDA + PyTorch) 크기로 인해 빌드·배포에 시간이 오래 소요됨
+- 첫 빌드 또는 첫 배포 시 충분한 대기 시간 확보 권장
+
 ## 포함 패키지
 
 | 패키지 | 기본 이미지 | vllm 이미지 |
@@ -61,20 +64,26 @@ OpenClaude 실행용 컨테이너 이미지. 사용 목적에 따라 두 가지 
 
 | 변수 | 설명 |
 |------|------|
-| `GIT_USER_NAME` / `GIT_USER_EMAIL` / `GIT_TOKEN` | 세 변수 모두 제공 시 entrypoint가 자동 git config + credential helper 설정 |
+| `GIT_USER_NAME` / `GIT_USER_EMAIL` / `GIT_TOKEN` | Git 사용자 정보 + GitHub Personal Access Token (세 변수 모두 필요) |
 
 **gcube CLI 자동 설정**
 
 | 변수 | 설명 |
 |------|------|
-| `GCUBE_ACCESS_TOKEN` | 제공 시 entrypoint가 `gcube configure set --token` 자동 실행 |
-| `GCUBE_PLATFORM_URL` / `GCUBE_OUTPUT` | (선택) |
+| `GCUBE_ACCESS_TOKEN` | gcube CLI 인증 토큰 |
+| `GCUBE_OUTPUT` | (선택) 출력 형식 (`table` / `json` / `yaml`) |
+
+**Hugging Face (vllm 이미지)**
+
+| 변수 | 설명 |
+|------|------|
+| `HF_TOKEN` | Hugging Face Hub 인증 토큰 |
 
 **gRPC 모드 (기본 이미지만)**
 
 | 변수 | 설명 |
 |------|------|
-| `GRPC_MODE=1` | entrypoint가 gRPC 서버 자동 시작 (검증 미진행) |
+| `GRPC_MODE=1` | gRPC 서버 모드 활성화 (검증 미진행) |
 | `GRPC_PORT` / `GRPC_HOST` | (선택) |
 
 ## 노출 포트
@@ -89,8 +98,9 @@ OpenClaude 실행용 컨테이너 이미지. 사용 목적에 따라 두 가지 
 1. `USE_ANTHROPIC=1` 분기 → `CLAUDE_CODE_USE_OPENAI` 비활성화
 2. Git 자동 설정 (선택)
 3. gcube CLI 토큰 자동 등록 (선택)
-4. Ollama 백그라운드 시작 + `OLLAMA_MODELS` 자동 pull (기본 이미지만)
-5. 안내 메시지 출력 → 컨테이너 유지 (사용자가 콘솔에서 `openclaude` 실행)
+4. Hugging Face Hub 토큰 자동 등록 (선택, vllm 이미지)
+5. Ollama 백그라운드 시작 + `OLLAMA_MODELS` 자동 pull (기본 이미지만)
+6. 안내 메시지 출력 → 컨테이너 유지 (사용자가 콘솔에서 `openclaude` 실행)
 
 ## 빌드 & 배포
 
